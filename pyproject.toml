@@ -1,12 +1,12 @@
 [project]
 name = "aie2e"
-version = "0.1.1"
+version = "0.1.2"
 description = "AI End-to-End Testing Framework Server"
 authors = [
     { name="AIE2E Team", email="team@aie2e.dev" }
 ]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 license = "MIT"
 keywords = ["ai", "testing", "e2e", "automation", "browser"]
 classifiers = [
@@ -14,9 +14,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Testing",
@@ -27,13 +24,13 @@ dependencies = [
     "pydantic>=2.11.7",
     "pydantic-core>=2.33.2",
     "browser-use>=0.5.11",
-    "mcp>=1.0.0",
+    "fastmcp>=2.12.3",
     "uvicorn[standard]>=0.35.0",
     "starlette>=0.27",
 ]
 
 [project.scripts]
-aie2e-server = "aie2e.mcp_server:cli_main"
+aie2e-server = "aie2e.mcp_server:main"
 
 [project.urls]
 Homepage = "https://github.com/aie2e/aie2e"

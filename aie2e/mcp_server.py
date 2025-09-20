@@ -7,7 +7,7 @@ import os
 import argparse
 from typing import Optional
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP, Context
 
 from .browser_test_runner import run_test_session
 from .test_models import TestSession, TestCaseResult, TestSessionResult, TestSessionInfo
@@ -22,6 +22,7 @@ _global_args = None
 async def run_test_session_tool(
     description: str,
     tests: list,
+    ctx: Context,
     allowed_domains: list = [],
     sensitive_data: dict = {}
 ) -> str:
@@ -43,9 +44,7 @@ async def run_test_session_tool(
         JSON string containing the test session results summary
 
     Streams test results as they are generated using MCP notifications for real-time feedback.
-    """   
-
-    ctx = mcp.get_context()
+    """
 
     # Use global command line arguments for LLM configuration
     if _global_args is None:
@@ -108,7 +107,7 @@ def configure_logging(transport: str) -> None:
         # Allow normal logging for HTTP transport
         os.environ["BROWSER_USE_LOG_LEVEL"] = "INFO"
 
-async def main():
+def main():
     """Main entry point for the AIE2E FastMCP server."""
     global _global_args
 
@@ -165,17 +164,22 @@ async def main():
     # Configure logging based on transport type
     configure_logging(args.transport)
     
-    if args.transport == "stdio":
-        # Run FastMCP with stdio
-        await mcp.run_stdio_async()
-    
-    elif args.transport == "http":
-        # Run FastMCP with SSE
-        await mcp.run_sse_async(host=args.host, port=args.port)
+    try:
+        if args.transport == "stdio":
+            # Run FastMCP with stdio
+            mcp.run(transport="stdio")
 
-def cli_main():
-    """Synchronous entry point for the CLI command."""
-    asyncio.run(main())
+        elif args.transport == "http":
+            # Run FastMCP with streamable HTTP
+            mcp.run(transport="http", host=args.host, port=args.port)
+
+    except (OSError, BrokenPipeError) as e:
+        logging.warning(f"Connection error: {e}")
+    except KeyboardInterrupt:
+        logging.info("Server shutdown requested")
+    except Exception as e:
+        logging.error(f"Server error: {e}")
+        raise
 
 if __name__ == "__main__":
-    cli_main()
+    main()

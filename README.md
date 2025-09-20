@@ -8,7 +8,7 @@ AIE2E MCP Server is the backend component that powers the AI End-to-End Testing 
 
 ## Prerequisites
 
-- **Python** >= 3.8
+- **Python** >= 3.11
 - **Chrome or Chromium browser** (automatically downloaded if not found)
 - **pip** for package management
 
