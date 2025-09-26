@@ -1,6 +1,6 @@
 [project]
 name = "aie2e"
-version = "0.1.2"
+version = "0.1.3"
 description = "AI End-to-End Testing Framework Server"
 authors = [
     { name="AIE2E Team", email="team@aie2e.dev" }

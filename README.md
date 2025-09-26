@@ -6,69 +6,56 @@ The Python server component of the AI-powered end-to-end testing framework. This
 
 AIE2E MCP Server is the backend component that powers the AI End-to-End Testing Framework. It provides a Model Context Protocol (MCP) server for running browser-based tests using AI agents and supports both stdio and HTTP transport mechanisms.
 
-## Prerequisites
-
-- **Python** >= 3.11
-- **Chrome or Chromium browser** (automatically downloaded if not found)
-- **pip** for package management
-
-## Installation
-
-### From PyPI (Recommended)
-
-```bash
-pip install aie2e-server
-```
-
-### From Source (Development)
-
-```bash
-git clone https://github.com/aie2e/aie2e-server.git
-cd aie2e-server
-pip install -r requirements.txt
-pip install -e .
-```
-
-### Verify Installation
-
-Test that the server is installed correctly:
-
-```bash
-python -m aie2e.mcp_server --help
-```
-
 ## Usage
 
-The MCP server can be run with two different transport mechanisms:
+The simplest way to run the MCP server is by using [uv](https://docs.astral.sh/uv/)
 
 ### Stdio Transport (Default)
 
 The stdio transport is used by default and is recommended for most use cases. You must specify the LLM configuration:
 
 ```bash
-python -m aie2e.mcp_server --model "gpt-4" --llm-provider "openai" --api-key "your-api-key"
-```
-
-Or explicitly specify stdio transport:
-
-```bash
-python -m aie2e.mcp_server --transport stdio --model "gemini-2.5-pro" --llm-provider "google" --api-key "your-api-key"
+uvx --from aie2e aie2e-server --model "gpt-4" --llm-provider "openai" --api-key "your-api-key"
 ```
 
 ### HTTP Transport
 
-The HTTP transport uses Server-Sent Events (SSE) over HTTP and is useful for remote connections:
+The HTTP transport uses streamable HTTP and is useful for remote connections:
 
 ```bash
-python -m aie2e.mcp_server --transport http --host 127.0.0.1 --port 3001 --model "claude-3-sonnet" --llm-provider "anthropic" --api-key "your-api-key"
+uvx --from aie2e aie2e-server --transport http --host 127.0.0.1 --port 3001 --model "claude-3-sonnet" --llm-provider "anthropic" --api-key "your-api-key"
+```
 
-# Run in headless mode (no browser UI)
-python -m aie2e.mcp_server --transport http --port 3001 --model "gpt-4" --llm-provider "openai" --headless
+### Claude Code
+
+To use this tool with Claude Code, configure it in your Claude Code MCP settings.
+Example `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "aie2e": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "aie2e",
+        "aie2e-server",
+        "--model",
+        "claude-3-5-sonnet-20241022",
+        "--llm-provider",
+        "anthropic"
+      ],
+      "env": {
+        "ANTHROPIC_API_KEY": "your-anthropic-api-key-here"
+      }
+    }
+  }
+}
 ```
 
 ### Using Environment Variables
 
-The API key can be set using environment variables instead of command line arguments. 
+The API key can be set using environment variables instead of the `--api-key` command line argument. 
 Use the standard environment variable name for your chosen provider, as supported by Browser-Use
 
 ```bash
@@ -76,76 +63,63 @@ Use the standard environment variable name for your chosen provider, as supporte
 export OPENAI_API_KEY="your-openai-key"
 export ANTHROPIC_API_KEY="your-anthropic-key"
 export GOOGLE_API_KEY="your-google-key"
-
-# Run without --api-key argument
-python -m aie2e.mcp_server --model "gpt-4" --llm-provider "openai"
 ```
 
 ## MCP Protocol
 
-The server implements the Model Context Protocol (MCP) and provides the following tool:
+The server implements the Model Context Protocol (MCP) and provides the following tools:
 
 ### `run_test_session`
 
-Executes browser-based test sessions using AI agents.
+Executes browser-based test sessions with multiple test cases using AI agents.
 
-**Server Configuration (Command Line):**
+**Use Cases:**
+- Test web applications end-to-end using AI agents
+- Validate user workflows across multiple pages or steps
+- Maintain state across a series of related test cases
+
+**MCP Tool Parameters:**
+- `description`: Description of the test session
+- `tests`: Array of test cases to execute sequentially
+- `allowed_domains`: List of allowed domains for navigation (optional)
+- `sensitive_data`: Sensitive data for form filling (optional)
+
+**Returns:**
+JSON string containing TestSessionResult with execution summary and statistics.
+
+### `run_test_case`
+
+Executes a single browser-based test case using AI agents.
+
+**Use Cases:**
+- Test user interactions with a web application using AI agents
+- Test a single specific workflow or task
+- Validate behavior of a web page or feature
+
+**MCP Tool Parameters:**
+- `task`: Description of the task to be performed in the test case
+- `initial_actions`: List of initial actions to perform before the main task (optional)
+- `use_vision`: Whether to use vision capabilities in the test case (optional, default: false)
+- `allowed_domains`: List of allowed domains for navigation (optional)
+- `sensitive_data`: Sensitive data for form filling (optional)
+
+**Returns:**
+JSON string containing TestSessionResult with execution summary for the single test case.
+
+## Server Configuration
+
+**Command Line Arguments:**
 The server configuration is set once at startup via command line arguments:
 - `--model`: AI model to use (e.g., "gemini-2.5-pro", "gpt-4") - **Required**
 - `--llm-provider`: LLM provider (e.g., "google", "openai", "anthropic") - **Required**
 - `--api-key`: API key for the LLM provider (optional, can use environment variables like `OPENAI_API_KEY`)
 - `--headless`: Run browser in headless mode (default: false)
 
-**MCP Tool Parameters:**
-- `description`: Description of the test session
-- `tests`: Array of test cases to execute
-- `allowed_domains`: List of allowed domains for navigation (optional)
-- `sensitive_data`: Sensitive data for form filling (optional)
-
 ## Integration
 
 The MCP server is designed to work with MCP-compatible clients. For JavaScript/TypeScript projects, use the [AIE2E Node.js client](https://github.com/aie2e/aie2e-client) which automatically connects to this server.
 
-### Using with AIE2E Client
-
-The most common usage is with the AIE2E Node.js client:
-
-```bash
-# Install both components
-npm install --save-dev aie2e
-pip install aie2e-server
-
-# The client automatically manages the server via stdio transport
-npx aie2e ./tests
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**"ModuleNotFoundError: No module named 'aie2e'"**
-- Ensure you ran the installation: `pip install aie2e-server`
-- Check your Python environment: `python -c "import aie2e; print('Installation OK')"`
-
-**"Command not found: python"**
-- On some systems, use `python3` instead of `python`
-- Ensure Python is installed and in your PATH
-
-**Browser issues**
-- The server automatically downloads Chrome/Chromium if not found
-- On Linux, you may need: `sudo apt-get install chromium-browser`
-- On macOS with Homebrew: `brew install chromium`
-
-**Permission errors**
-- Try running with elevated privileges if needed
-- Ensure your user has permission to create browser profiles
-
-### Getting Help
-
-- Check the [issues page](https://github.com/aie2e/aie2e-server/issues) for known problems
-- Create a new issue with your error message and system information
-
-### Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
